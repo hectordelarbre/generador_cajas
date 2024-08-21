@@ -6,44 +6,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const integrityStatusDisplay = document.getElementById('integrityStatus');
     const checkboxes = document.querySelectorAll('.verifyCheckbox');
 
-    const apiUrl = 'http://localhost:3000/generate-password'; // URL del backend
-
     // Validación de los campos
     const validateInputs = () => {
-        let allValid = true;
+        
 
         // Validar campos numéricos
         passwordInputs.forEach(input => {
             if (input.value.length !== 4 || isNaN(input.value)) {
-                allValid = false;
+                
             }
         });
 
         // Validar campo hexadecimal
         const hexValue = hexInput.value;
         if (hexValue.length !== 12 || !/^[0-9a-fA-F]+$/.test(hexValue)) {
-            allValid = false;
+            
         }
 
-        // Deshabilitar el botón de generación si los campos no son válidos
-        generateButton.disabled = !allValid;
+     
     };
 
     // Generación de la contraseña única
-    const generateUniquePassword = async () => {
+    const generateUniquePassword = () => {
         const passwords = Array.from(passwordInputs).map(input => parseInt(input.value, 10));
+
+        let passwordSum = ((passwords[0] + passwords[1]) - (passwords[2] + passwords[3]) - (passwords[4] + passwords[5])) % 10000;
+        passwordSum = Math.abs(passwordSum);
+
         const hexValue = hexInput.value;
+        const leftHex = hexValue.slice(0, 4);
+        const centerHex = hexValue.slice(4, 8);
+        const rightHex = hexValue.slice(8, 12);
 
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ passwords, hexValue }),
-        });
+        const leftDecimal = parseInt(leftHex, 16);
+        const centerDecimal = parseInt(centerHex, 16);
+        const rightDecimal = parseInt(rightHex, 16);
 
-        const data = await response.json();
-        uniquePasswordDisplay.textContent = data.uniquePassword;
+        const leftComplement = (9999 - leftDecimal) % 10000;
+        const rightComplement = (9999 - rightDecimal) % 10000;
+
+        let hexResult = (leftComplement * rightComplement) % 10000;
+        hexResult = Math.abs(hexResult);
+
+        let finalResult = (hexResult + passwordSum) % 10000;
+        finalResult = Math.abs(finalResult);
+
+        uniquePasswordDisplay.textContent = `#${finalResult.toString().padStart(4, '0')}`;
     };
 
     // Verificación de la integridad
@@ -71,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Verificar si el complemento es cero para la integridad
             const integrityResult = (rightComplement === 0) ? 'OK' : 'Error';
 
-            // Hacer la función lógica AND entre integrityChecking y integrityResult
+            // Hacer la función lógica AND entre integrityChecking e integrityResult
             const integrityCheck = (integrityChecking === 'OK' ? 1 : 0) & (integrityResult === 'OK' ? 1 : 0);
 
             integrityStatusDisplay.textContent = integrityCheck === 1 ? 'OK' : 'Error';
@@ -98,9 +106,24 @@ document.addEventListener('DOMContentLoaded', () => {
         verifyIntegrity();
     };
 
+    // Manejo de clics en el campo hexadecimal
+    const handleHexFocus = () => {
+        // Desmarcar todas las casillas de verificación
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Deshabilitar el botón de generación
+        generateButton.disabled = true;
+
+        // Limpiar el estado de integridad
+        integrityStatusDisplay.textContent = '';
+    };
+
     // Escuchadores de eventos
     passwordInputs.forEach(input => input.addEventListener('input', validateInputs));
     hexInput.addEventListener('input', validateInputs);
+    hexInput.addEventListener('focus', handleHexFocus); // Añadir evento de foco al campo hexadecimal
     generateButton.addEventListener('click', generateUniquePassword);
     checkboxes.forEach(checkbox => checkbox.addEventListener('change', handleCheckboxChange));
 });
