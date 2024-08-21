@@ -1,14 +1,13 @@
 {
-  "name": "backend",
+  "name": "password-generator-backend",
   "version": "1.0.0",
-  "description": "Backend para el proyecto de generación de contraseñas únicas",
+  "description": "Backend para el generador de contraseñas",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
-  },
-  "author": "Tu Nombre",
-  "license": "ISC"
+    "express": "^4.17.1",
+    "cors": "^2.8.5"
+  }
 }
